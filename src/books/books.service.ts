@@ -1,36 +1,30 @@
 import { Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { Book } from './schemas/book.schema';
 
-export interface Book {
-    id: string;
-    title: string;
-    description: string;
-    author: string;
+@Injectable()
+export class BooksService {
+  constructor(@InjectModel(Book.name) private bookModel: Model<Book>) {}
+
+  async getAllBooks(): Promise<Book[]> {
+    return this.bookModel.find().exec();
   }
-  
-  export interface CreateBook {
-    title: string;
-    description: string;
-    author: string;
+
+  async getBookById(id: string): Promise<Book | null> {
+    return this.bookModel.findById(id).exec();
   }
-  
-  @Injectable()
-  export class BooksService {
-    private books: Book[] = [];
-  
-    getAllBooks(): Book[] {
-      return this.books;
-    }
-  
-    getBookById(id: string): Book | undefined {
-      return this.books.find((book) => book.id === id);
-    }
-  
-    addBook(bookData: CreateBook): Book {
-      const newBook: Book = {
-        id: (this.books.length + 1).toString(),
-        ...bookData,
-      };
-      this.books.push(newBook);
-      return newBook;
-    }
+
+  async addBook(data: Partial<Book>): Promise<Book> {
+    const newBook = new this.bookModel(data);
+    return newBook.save();
   }
+
+  async updateBook(id: string, data: Partial<Book>): Promise<Book | null> {
+    return this.bookModel.findByIdAndUpdate(id, data, { new: true }).exec();
+  }
+
+  async deleteBook(id: string): Promise<Book | null> {
+    return this.bookModel.findByIdAndDelete(id).exec();
+  }
+}
